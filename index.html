@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Only Game</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>❓ Question Only Game</h1>
+            <p class="subtitle">Can you keep the conversation going with only questions?</p>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat">
+                <span class="stat-label">Your Streak</span>
+                <span class="stat-value" id="user-streak">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">AI Streak</span>
+                <span class="stat-value" id="ai-streak">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Total Questions</span>
+                <span class="stat-value" id="total-questions">0</span>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div class="chat-container" id="chat-container">
+                <div class="welcome-message" id="welcome-message">
+                    <div class="message ai-message">
+                        <div class="message-content">
+                            <p>👋 Welcome to the Question Only Game!</p>
+                            <p>To start the game, ask me a question. Remember - every response must be a question ending with "?"</p>
+                            <button class="btn btn-secondary" onclick="showRules()">📖 View Rules</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-messages" id="chat-messages"></div>
+            </div>
+
+            <div class="input-area" id="input-area">
+                <div class="input-wrapper">
+                    <textarea 
+                        id="question-input" 
+                        placeholder="Type your question here... (must end with ?)"
+                        rows="2"
+                        autocomplete="off"
+                    ></textarea>
+                    <button class="btn btn-primary" id="send-btn" onclick="sendQuestion()">
+                        <span>Send</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-hint">
+                    <span id="validation-hint"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-outline" onclick="resetGame()">
+                🔄 New Game
+            </button>
+            <button class="btn btn-outline" onclick="showRules()">
+                📖 Rules
+            </button>
+        </div>
+
+        <!-- Rules Modal -->
+        <div class="modal" id="rules-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📋 Game Rules</h2>
+                    <button class="close-btn" onclick="closeRules()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="rules-section">
+                        <h3>🎯 How to Play</h3>
+                        <ul>
+                            <li><strong>Start:</strong> You ask a question to begin the game</li>
+                            <li><strong>Response:</strong> AI must answer with another question</li>
+                            <li><strong>Chain:</strong> You must respond to AI's question with a NEW question</li>
+                            <li><strong>Keep Going:</strong> The chain continues until someone breaks the rules</li>
+                        </ul>
+                    </div>
+                    <div class="rules-section warning">
+                        <h3>🚫 Ways to Lose</h3>
+                        <ul>
+                            <li>Answering with a statement instead of a question</li>
+                            <li>Not ending with a question mark (?)</li>
+                            <li>Repeating a previous question</li>
+                            <li>Taking too long to respond</li>
+                            <li>Asking a question that's too short or too long</li>
+                        </ul>
+                    </div>
+                    <div class="rules-section tips">
+                        <h3>💡 Tips</h3>
+                        <ul>
+                            <li>Listen carefully to the AI's question</li>
+                            <li>Ask follow-up questions about the topic</li>
+                            <li>Try to connect your questions to create a conversation</li>
+                            <li>Have fun exploring different topics!</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Modal -->
+        <div class="modal" id="gameover-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="gameover-title">🎉 Game Over!</h2>
+                    <button class="close-btn" onclick="closeGameOver()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="gameover-message" id="gameover-message"></div>
+                    <div class="gameover-stats">
+                        <p>Your Streak: <strong id="final-user-streak">0</strong></p>
+                        <p>AI Streak: <strong id="final-ai-streak">0</strong></p>
+                        <p>Total Questions: <strong id="final-total">0</strong></p>
+                    </div>
+                    <button class="btn btn-primary btn-large" onclick="resetGame()">
+                        🔄 Play Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
