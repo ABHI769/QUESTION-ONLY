@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Only</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+        }
+        
+        ::-webkit-scrollbar { 
+            width: 6px; 
+        }
+        ::-webkit-scrollbar-track { 
+            background: transparent; 
+        }
+        ::-webkit-scrollbar-thumb { 
+            background: #27272a; 
+            border-radius: 10px; 
+        }
+        ::-webkit-scrollbar-thumb:hover { 
+            background: #3f3f46; 
+        }
+
+        .loader-dot {
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .loader-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loader-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .grid-background {
+            background-image: radial-gradient(#27272a 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.15;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen antialiased selection:bg-zinc-800 selection:text-zinc-100 relative overflow-x-hidden">
+
+    <!-- Subtle Grid Background -->
+    <div class="fixed inset-0 pointer-events-none z-0 grid-background"></div>
+
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800/50">
+        <div class="max-w-3xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-zinc-100 text-zinc-950 flex items-center justify-center font-medium text-sm tracking-tighter">
+                    QO
+                </div>
+                <h1 class="text-xl tracking-tight font-medium text-zinc-100">Question Only</h1>
+            </div>
+            <div class="flex items-center gap-4 text-xs font-medium text-zinc-400">
+                <div class="flex items-center gap-2 bg-zinc-900/50 px-2.5 py-1 rounded-full border border-zinc-800/50">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+                    <span id="stateIndicator">Active</span>
+                </div>
+                <button id="rulesBtn" class="hover:text-zinc-100 transition-colors flex items-center gap-1.5">
+                    <iconify-icon icon="solar:info-circle-linear" class="text-sm icon-stroke"></iconify-icon> Rules
+                </button>
+                <button id="resetBtn" class="hover:text-zinc-100 transition-colors flex items-center gap-1.5">
+                    <iconify-icon icon="solar:restart-linear" class="text-sm icon-stroke"></iconify-icon> Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Chat Area -->
+    <main class="relative z-10 w-full max-w-3xl mx-auto px-4 pt-24 pb-40 min-h-screen flex flex-col">
+        <div id="chatHistory" class="flex flex-col space-y-8 mt-auto">
+            <!-- Messages injected here via JS -->
+        </div>
+        
+        <!-- Loading Indicator (Hidden by default) -->
+        <div id="loadingIndicator" class="hidden mt-8 flex gap-4 items-start">
+            <div class="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center shrink-0 mt-0.5">
+                <iconify-icon icon="solar:cpu-linear" class="text-zinc-900 text-lg icon-stroke"></iconify-icon>
+            </div>
+            <div class="flex-1 space-y-1">
+                <div class="text-xs font-medium text-zinc-500">System</div>
+                <div class="h-6 flex items-center gap-1">
+                    <div class="w-1.5 h-1.5 bg-zinc-500 rounded-full loader-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-zinc-500 rounded-full loader-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-zinc-500 rounded-full loader-dot"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Input Area -->
+    <div class="fixed bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent pt-12 pb-6 px-4">
+        <div class="max-w-3xl mx-auto relative">
+            
+            <!-- Validation Toast -->
+            <div id="validationError" class="absolute -top-12 left-1/2 -translate-x-1/2 text-xs text-red-400 bg-red-400/10 border border-red-400/20 px-4 py-2 rounded-full hidden opacity-0 transition-all duration-200 flex items-center gap-2 shadow-lg backdrop-blur-md">
+                <iconify-icon icon="solar:danger-circle-linear" class="text-sm icon-stroke"></iconify-icon>
+                <span id="errorText">Invalid question format</span>
+            </div>
+
+            <form id="gameForm" class="relative flex items-end bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl shadow-sm focus-within:border-zinc-700 focus-within:ring-1 focus-within:ring-zinc-700 transition-all">
+                <textarea 
+                    id="questionInput"
+                    rows="1"
+                    class="w-full bg-transparent border-0 text-sm text-zinc-100 placeholder-zinc-500 focus:ring-0 resize-none py-4 pl-5 pr-14 max-h-32"
+                    placeholder="Ask your question..."
+                ></textarea>
+                
+                <button type="submit" id="sendBtn" title="Send question" class="absolute right-2.5 bottom-2.5 w-8 h-8 flex items-center justify-center rounded-xl bg-zinc-100 text-zinc-900 hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <iconify-icon icon="solar:arrow-up-linear" class="text-lg icon-stroke"></iconify-icon>
+                </button>
+            </form>
+            <div class="text-center mt-3">
+                <p class="text-[0.65rem] text-zinc-500 uppercase tracking-[0.15em] font-medium">Respond with a question only</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rulesModal" class="fixed inset-0 z-50 bg-zinc-950/80 backdrop-blur-sm hidden items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col scale-95 transition-transform duration-300" id="rulesContent">
+            <div class="px-5 py-4 border-b border-zinc-800 flex items-center justify-between">
+                <h2 class="text-lg tracking-tight font-medium text-zinc-100">Game Rules</h2>
+                <button id="closeRules" title="Close rules" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+                    <iconify-icon icon="solar:close-circle-linear" class="text-lg icon-stroke"></iconify-icon>
+                </button>
+            </div>
+            <div class="p-5 text-sm text-zinc-300 leading-relaxed bg-zinc-900/50" id="rulesText">
+                <div class="flex items-center gap-2 text-zinc-500">
+                    <iconify-icon icon="solar:refresh-linear" class="animate-spin"></iconify-icon> Loading rules...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatHistory = document.getElementById('chatHistory');
+            const form = document.getElementById('gameForm');
+            const input = document.getElementById('questionInput');
+            const sendBtn = document.getElementById('sendBtn');
+            const errorToast = document.getElementById('validationError');
+            const errorText = document.getElementById('errorText');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            
+            // Modal Elements
+            const rulesBtn = document.getElementById('rulesBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const rulesModal = document.getElementById('rulesModal');
+            const rulesContent = document.getElementById('rulesContent');
+            const closeRules = document.getElementById('closeRules');
+            const rulesText = document.getElementById('rulesText');
+
+            // Auto-resize textarea
+            input.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+
+            // Enter to submit (Shift+Enter for new line)
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if(this.value.trim() !== '') {
+                        form.dispatchEvent(new Event('submit'));
+                    }
+                }
+            });
+
+            function scrollToBottom() {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+
+            function createMessageElement(text, isAi) {
+                const div = document.createElement('div');
+                div.className = 'flex gap-4 items-start opacity-0 translate-y-2 transition-all duration-300';
+                
+                if (isAi) {
+                    div.innerHTML = `
+                        <div class="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+                            <iconify-icon icon="solar:cpu-linear" class="text-zinc-900 text-lg icon-stroke"></iconify-icon>
+                        </div>
+                        <div class="flex-1 space-y-1">
+                            <div class="text-xs font-medium text-zinc-500">System</div>
+                            <div class="text-sm text-zinc-200 leading-relaxed">${text}</div>
+                        </div>
+                    `;
+                } else {
+                    div.innerHTML = `
+                        <div class="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0 mt-0.5">
+                            <iconify-icon icon="solar:user-linear" class="text-zinc-300 text-lg icon-stroke"></iconify-icon>
+                        </div>
+                        <div class="flex-1 space-y-1">
+                            <div class="text-xs font-medium text-zinc-500">You</div>
+                            <div class="text-sm text-zinc-300 leading-relaxed">${text}</div>
+                        </div>
+                    `;
+                }
+                
+                return div;
+            }
+
+            function appendMessage(text, isAi) {
+                const el = createMessageElement(text, isAi);
+                chatHistory.appendChild(el);
+                
+                // Trigger animation
+                requestAnimationFrame(() => {
+                    el.classList.remove('opacity-0', 'translate-y-2');
+                });
+                
+                scrollToBottom();
+            }
+
+            function showError(msg) {
+                errorText.textContent = msg;
+                errorToast.classList.remove('hidden');
+                
+                requestAnimationFrame(() => {
+                    errorToast.classList.remove('opacity-0', '-translate-y-2');
+                    errorToast.classList.add('opacity-100', 'translate-y-0');
+                });
+                
+                setTimeout(() => {
+                    errorToast.classList.remove('opacity-100', 'translate-y-0');
+                    errorToast.classList.add('opacity-0', '-translate-y-2');
+                    setTimeout(() => errorToast.classList.add('hidden'), 200);
+                }, 3000);
+            }
+
+            async function loadHistory() {
+                try {
+                    const res = await fetch('/api/history');
+                    const data = await res.json();
+                    chatHistory.innerHTML = '';
+                    
+                    if (!data.history || data.history.length === 0) {
+                        appendMessage("Welcome. The rules are simple: you must only communicate by asking questions. Begin when you are ready.", true);
+                    } else {
+                        data.history.forEach(msg => {
+                            const el = createMessageElement(msg.text, msg.is_ai);
+                            el.classList.remove('opacity-0', 'translate-y-2'); // Show immediately on initial load
+                            chatHistory.appendChild(el);
+                        });
+                        scrollToBottom();
+                    }
+                } catch (e) {
+                    appendMessage("Failed to connect to the game server.", true);
+                }
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const question = input.value.trim();
+                if (!question) return;
+                
+                // Allow any input - server will validate and declare AI winner if invalid
+
+                sendBtn.disabled = true;
+                input.disabled = true;
+
+                try {
+                    // Allow any input - server will validate and declare AI winner if invalid
+                    // This enables AI to win when user types an answer instead of a question
+
+                    // 1. Display user message and clear input
+                    appendMessage(question, false);
+                    input.value = '';
+                    input.style.height = 'auto';
+                    
+                    // Show typing indicator
+                    loadingIndicator.classList.remove('hidden');
+                    scrollToBottom();
+
+                    // 2. Process turn
+                    const playRes = await fetch('/api/play', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({question})
+                    });
+                    const playData = await playRes.json();
+                    
+                    // Check for game over state
+                    if (playData.game_state === 'user_won') {
+                        appendMessage(playData.message || "Congratulations! You won!", true);
+                        input.disabled = true;
+                        sendBtn.disabled = true;
+                        input.parentElement.parentElement.classList.add('hidden');
+                        // Update state indicator
+                        document.getElementById('stateIndicator').textContent = 'You Won!';
+                        document.querySelector('#stateIndicator').previousElementSibling.classList.remove('bg-emerald-500');
+                        document.querySelector('#stateIndicator').previousElementSibling.classList.add('bg-yellow-500', 'shadow-[0_0_8px_rgba(234,179,8,0.5)]');
+                        // Show restart option
+                        const restartDiv = document.createElement('div');
+                        restartDiv.className = 'fixed bottom-8 left-0 right-0 text-center z-30';
+                        restartDiv.innerHTML = '<button id="restartAfterWin" class="bg-zinc-100 text-zinc-900 px-6 py-2 rounded-full text-sm font-medium hover:bg-zinc-200 transition-colors">Play Again</button>';
+                        document.body.appendChild(restartDiv);
+                        document.getElementById('restartAfterWin').addEventListener('click', () => {
+                            fetch('/api/reset', { method: 'POST' }).then(() => {
+                                location.reload();
+                            });
+                        });
+                    } else if (playData.game_state === 'ai_won') {
+                        appendMessage(playData.message || "AI Wins!", true);
+                        input.disabled = true;
+                        sendBtn.disabled = true;
+                        input.parentElement.parentElement.classList.add('hidden');
+                        // Update state indicator
+                        document.getElementById('stateIndicator').textContent = 'AI Won';
+                        document.querySelector('#stateIndicator').previousElementSibling.classList.remove('bg-emerald-500');
+                        document.querySelector('#stateIndicator').previousElementSibling.classList.add('bg-red-500', 'shadow-[0_0_8px_rgba(239,68,68,0.5)]');
+                        // Show restart option
+                        const restartDiv = document.createElement('div');
+                        restartDiv.className = 'fixed bottom-8 left-0 right-0 text-center z-30';
+                        restartDiv.innerHTML = '<button id="restartAfterWin" class="bg-red-500 text-white px-6 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition-colors">Try Again</button>';
+                        document.body.appendChild(restartDiv);
+                        document.getElementById('restartAfterWin').addEventListener('click', () => {
+                            fetch('/api/reset', { method: 'POST' }).then(() => {
+                                location.reload();
+                            });
+                        });
+                    }
+                    
+                    // 4. Reload accurate state from server
+                    await loadHistory();
+
+                } catch(e) {
+                    showError("Communication error with the server.");
+                } finally {
+                    loadingIndicator.classList.add('hidden');
+                    sendBtn.disabled = false;
+                    input.disabled = false;
+                    input.focus();
+                    scrollToBottom();
+                }
+            });
+
+            // Modal Logic
+            rulesBtn.addEventListener('click', async () => {
+                rulesModal.classList.remove('hidden');
+                // Trigger transition
+                requestAnimationFrame(() => {
+                    rulesModal.classList.remove('opacity-0');
+                    rulesContent.classList.remove('scale-95');
+                });
+
+                try {
+                    const res = await fetch('/api/rules');
+                    const data = await res.json();
+                    if (Array.isArray(data.rules)) {
+                        let html = '<div class="space-y-4">';
+                        data.rules.forEach(rule => {
+                            if (rule === '') {
+                                html += '<div class="h-2"></div>';
+                            } else if (rule.includes(':')) {
+                                html += `<div class="text-sm font-medium text-zinc-200 pt-2 border-t border-zinc-800">${rule}</div>`;
+                            } else if (rule.startsWith('-')) {
+                                html += `<div class="flex items-start gap-2 text-zinc-400"><span class="text-zinc-600 mt-0.5">•</span><span>${rule.substring(1).trim()}</span></div>`;
+                            } else {
+                                html += `<div class="flex items-start gap-2 text-zinc-300"><span class="text-zinc-500 mt-0.5">•</span><span>${rule}</span></div>`;
+                            }
+                        });
+                        html += '</div>';
+                        rulesText.innerHTML = html;
+                    } else {
+                        rulesText.textContent = data.rules;
+                    }
+                } catch(e) {
+                    rulesText.textContent = "Unable to fetch rules at this time.";
+                }
+            });
+
+            closeRules.addEventListener('click', () => {
+                rulesModal.classList.add('opacity-0');
+                rulesContent.classList.add('scale-95');
+                setTimeout(() => {
+                    rulesModal.classList.add('hidden');
+                }, 300);
+            });
+
+            // Close modal on click outside
+            rulesModal.addEventListener('click', (e) => {
+                if(e.target === rulesModal) closeRules.click();
+            });
+
+            // Reset Logic
+            resetBtn.addEventListener('click', async () => {
+                if(confirm('Are you sure you want to reset the conversation?')) {
+                    try {
+                        await fetch('/api/reset', { method: 'POST' });
+                        await loadHistory();
+                    } catch (e) {
+                        showError("Failed to reset game.");
+                    }
+                }
+            });
+
+            // Initialize
+            loadHistory();
+        });
+    </script>
+</body>
+</html>
